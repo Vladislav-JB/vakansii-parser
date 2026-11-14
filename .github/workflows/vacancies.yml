@@ -1,9 +1,6 @@
 name: vacancies
 
 on:
-  schedule:
-    # каждые 10 минут, 06:00-17:50 UTC = 09:00-20:50 по Москве
-    - cron: "*/10 6-17 * * *"
   workflow_dispatch: {}
 
 concurrency:
