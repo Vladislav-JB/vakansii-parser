@@ -321,7 +321,9 @@ def main():
 
     sent = notify_new([r for r in records if r["score"] >= core.NOTIFY_MIN_SCORE]) if records else []
     ok = set(sent) | {r["url"] for r in records if r["score"] < core.NOTIFY_MIN_SCORE}
-    mark_notified([u for u in done_urls if u not in ok])
+    # Посты, которые не удалось отправить (сеть упала), оставляем pending для повтора.
+    failed = {r["url"] for r in records if r["score"] >= core.NOTIFY_MIN_SCORE} - set(sent)
+    mark_notified([u for u in done_urls if u not in failed])
 
     print(f"Обработано: {len(done_urls)}; записей подошло: {len(records)}; "
           f"уведомлено: {len(sent)}; статистика отсева: {dict(stats)}; "
