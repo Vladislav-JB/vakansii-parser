@@ -30,6 +30,16 @@ PAGES = (1, 2)
 EXCLUDED = {"3270786", "3271296"}  # нежелательные заказы по решению пользователя
 BATCH = 200
 
+# PostgREST требует, чтобы у всех объектов в одной вставке был одинаковый набор
+# полей (иначе PGRST102 «All object keys must match»). Отсеянные и подходящие
+# заказы заполняют разные поля, поэтому набор выравнивается перед записью.
+ORDER_KEYS = ("order_id", "name", "price", "price_max", "offers",
+              "slug", "url", "reason", "notified")
+
+
+class KworkUnavailable(Exception):
+    """Kwork отдал не список заказов (антибот, лимит, сбой) — это не поломка кода."""
+
 OUTSIDE_RE = re.compile(
     r"wordpress|вордпресс|\bwp\b|битрикс|bitrix|opencart|joomla|modx|агрегатор|парсер|парсинг|"
     r"личн\w* кабинет|онлайн[ -]?оплат|интеграц\w*\s+(?:с\s+)?1[сc]|электронн\w* дневник|lms|saas|"
@@ -94,31 +104,53 @@ def future_slug(order_id):
 
 
 def fetch_orders(session):
-    """Открытые заказы категории 37 (сайты), страницы 1-2. С повторами."""
-    orders, last = [], None
+    """Открытые заказы категории 37 (сайты), страницы 1-2. С повторами.
+
+    Kwork иногда отвечает HTML-заглушкой (антибот, лимит) вместо JSON — это не
+    ошибка кода: пробуем ещё раз, а если не вышло, поднимаем KworkUnavailable,
+    чтобы прогон завершился без красного креста в Actions.
+    """
+    orders = []
     for page in PAGES:
-        url = f"https://kwork.ru/projects?page={page}"
+        body = None
         for attempt in range(3):
+            resp = None
             try:
                 resp = session.post("https://kwork.ru/projects", data={"c": "37", "page": str(page)},
                                     headers={"X-Requested-With": "XMLHttpRequest",
                                              "User-Agent": "Mozilla/5.0 WebAtelie-Kwork-Notify"},
                                     timeout=30)
-                break
             except requests.RequestException as e:
-                last = e
-                if attempt + 1 < 3:
-                    wait = 8 * (attempt + 1)
-                    print(f"    сеть дёрнулась ({type(e).__name__}), повтор {attempt + 2} из 3 через {wait} с", flush=True)
-                    time.sleep(wait)
+                print(f"    стр.{page}: сеть дёрнулась ({type(e).__name__})", flush=True)
+            if resp is not None and resp.status_code == 200:
+                try:
+                    body = resp.json()
+                except ValueError:
+                    body = None
+            if body is not None:
+                break
+            if attempt + 1 < 3:
+                wait = 10 * (attempt + 1)
+                got = "не JSON" if resp is not None and resp.status_code == 200 else (
+                    f"HTTP {resp.status_code}" if resp is not None else "нет ответа")
+                print(f"    стр.{page}: вместо заказов {got}, повтор {attempt + 2} из 3 через {wait} с",
+                      flush=True)
+                time.sleep(wait)
         else:
-            raise last
-        body = resp.json()
+            raise KworkUnavailable(f"страница {page}: за 3 попытки заказов не получили")
         data = (body.get("data") or {}).get("pagination") or {}
         items = [x for x in (data.get("data") or []) if x]
         orders += items
-        print(f"стр.{page}: HTTP {resp.status_code}, заказов {len(items)}", flush=True)
+        print(f"стр.{page}: HTTP 200, заказов {len(items)}", flush=True)
     return {str(o["id"]): o for o in orders}
+
+
+def insert_orders(rows):
+    """Пишет новые заказы в kw_orders. У всех строк — один и тот же набор полей."""
+    padded = [{k: r.get(k) for k in ORDER_KEYS} for r in rows]
+    for i in range(0, len(padded), BATCH):
+        sb_request("POST", "kw_orders", prefer="resolution=ignore-duplicates,return=minimal",
+                   body=padded[i:i + BATCH])
 
 
 def load_seen():
@@ -167,6 +199,13 @@ def main():
     session = requests.Session()
     try:
         orders = fetch_orders(session)
+    except KworkUnavailable as e:
+        # Kwork ответил заглушкой вместо заказов — не падаем (иначе письмо о сбое),
+        # просто сообщаем и ждём следующего запуска через 5 минут
+        msg = f"Kwork не отдал заказы ({e}). Следующая попытка через 5 минут."
+        print("⏸ " + msg, flush=True)
+        tg_send("⏸ Сторож Kwork: " + msg)
+        return
     except Exception as e:
         msg = f"⚠️ Сторож Kwork (облако): ошибка при чтении заказов ({type(e).__name__}). Прогон остановлен."
         print(msg, "\n", e, flush=True)
@@ -208,9 +247,7 @@ def main():
                    "notified": False}
             rows.append(row)
             eligible.append(row)
-    for i in range(0, len(rows), BATCH):
-        sb_request("POST", "kw_orders", prefer="resolution=ignore-duplicates,return=minimal",
-                   body=rows[i:i + BATCH])
+    insert_orders(rows)
 
     # К доставке: подходящие этого прогона + недоставленные прошлых прогонов
     todo = {r["order_id"]: {"order_id": r["order_id"], "name": r["name"], "price": r["price"],
