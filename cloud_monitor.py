@@ -11,7 +11,9 @@
   SUPABASE_URL, SUPABASE_SERVICE_KEY, TG_BOT_TOKEN, TG_CHAT_ID
 Логика чтения, фильтров и оценок та же, что у локального парсера (модуль it_monitor.py).
 Каждые 10 минут обрабатывается одна из двух групп каналов (по чётности позиции в
-channels.txt; чередование по десяткам минут UTC, как у локальной задачи).
+channels.txt). Группа выбирается по счётчику в Supabase (как data/it_part.txt у
+локальной задачи): 1 -> 2 -> 1 -> ..., чтобы задержки и отмены прогонов не сдвигали
+очередь.
 """
 import hashlib
 import html as html_lib
@@ -41,6 +43,7 @@ if not SB_URL or not SB_KEY:
 
 BOILER_WINDOW = 200   # сколько последних постов канала смотрим при поиске рекламных ссылок
 BATCH = 200           # размер пачки при записи в Supabase
+PART_KEY = "__part__"  # зарезервированный канал в vp_state для счётчика групп
 
 
 # ---------- Supabase (REST/PostgREST) ----------
@@ -60,12 +63,28 @@ def sb_request(method, path, params=None, body=None, prefer=None):
 
 def load_state():
     rows = sb_request("GET", "vp_state", params={"select": "channel,last_seen"}).json()
-    return {row["channel"]: row["last_seen"] for row in rows}
+    return {row["channel"]: row["last_seen"] for row in rows if row["channel"] != PART_KEY}
 
 
 def save_state(ch, last_seen):
     sb_request("POST", "vp_state", prefer="resolution=merge-duplicates",
                body={"channel": ch, "last_seen": last_seen,
+                     "updated_at": datetime.now(timezone.utc).isoformat()})
+
+
+def load_part():
+    """Текущая группа (1 или 2) из счётчика в vp_state. Нет записи — начинаем с 1."""
+    rows = sb_request("GET", "vp_state", params={
+        "select": "last_seen", "channel": f"eq.{PART_KEY}", "limit": 1}).json()
+    try:
+        return int(rows[0]["last_seen"])
+    except (IndexError, TypeError, ValueError):
+        return 1
+
+
+def save_part(part):
+    sb_request("POST", "vp_state", prefer="resolution=merge-duplicates",
+               body={"channel": PART_KEY, "last_seen": part,
                      "updated_at": datetime.now(timezone.utc).isoformat()})
 
 
@@ -245,8 +264,9 @@ def fetch_channel(session, ch, last_seen, made):
 def main():
     t0 = time.time()
     channels = core.CHANNELS
-    part = "1" if (datetime.now(timezone.utc).minute // 10) % 2 == 0 else "2"
-    channels = [ch for n, ch in enumerate(channels) if n % 2 == (0 if part == "1" else 1)]
+    part = load_part()
+    save_part(2 if part == 1 else 1)  # следующему запуску — другая группа
+    channels = [ch for n, ch in enumerate(channels) if n % 2 == (0 if part == 1 else 1)]
     print(f"=== {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC запуск: "
           f"группа {part} из 2, каналов: {len(channels)} ===", flush=True)
 
