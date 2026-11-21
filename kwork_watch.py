@@ -40,14 +40,15 @@ ORDER_KEYS = ("order_id", "name", "price", "price_max", "offers",
 class KworkUnavailable(Exception):
     """Kwork отдал не список заказов (антибот, лимит, сбой) — это не поломка кода."""
 
+
 OUTSIDE_RE = re.compile(
     r"wordpress|вордпресс|\bwp\b|битрикс|bitrix|opencart|joomla|modx|агрегатор|парсер|парсинг|"
     r"личн\w* кабинет|онлайн[ -]?оплат|интеграц\w*\s+(?:с\s+)?1[сc]|электронн\w* дневник|lms|saas|"
-    r"пиксель в пиксель|правк\w* существующ|доработ\w* сайт|перенос\w* сайт|перенести сайт|только с отзывами",
+    r"пиксель в пиксель|правк\w* существующ|перенос\w* сайт|перенести сайт|только с отзывами",
     re.I)
 MUST_RE = re.compile(r"сайт|лендинг|лэндинг|визитк|landing|одностранич|бот|ботов|телеграм|ocr|aiogram|cron", re.I)
 SIMPLE_RE = re.compile(r"визитк|прост\w*\s+(?:сайт|лендинг|лэндинг)|небольш\w*\s+сайт", re.I)
-EXTRA_RE = re.compile(r"интеграц|crm|срм|многостранич|уникальн\w* дизайн|индивидуальн\w* дизайн|"
+EXTRA_RE = re.compile(r"интеграц|crm|срм|многостранич|уникальн\w* дизайн|индивидуа\w* дизайн|"
                       r"анимаци|калькулятор|каталог", re.I)
 
 
@@ -237,7 +238,7 @@ def main():
             offers = None
         if reason:
             rows.append({"order_id": oid, "name": clean(o.get("name"))[:200], "price": price,
-                         "price_max": price_max, "offers": offers, "reason": reason, "notified": True})
+                          "price_max": price_max, "offers": offers, "reason": reason, "notified": True})
             print(f"skip {oid} {reason}", flush=True)
         else:
             slug = future_slug(oid)
