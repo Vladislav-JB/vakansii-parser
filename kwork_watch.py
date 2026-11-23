@@ -174,26 +174,35 @@ def mark_notified(ids):
                    body={"notified": True, "notified_at": datetime.now(timezone.utc).isoformat()})
 
 
-def order_text(order_id, name, price, price_max, offers, slug):
-    """Уведомление по утверждённому образцу навыка (короткое, с будущим адресом)."""
+def order_messages(order_id, name, price, price_max, offers, slug):
+    """Уведомление по утверждённому образцу навыка — ДВУМЯ сообщениями (просьба
+    пользователя 2026-11-23): сначала инфо о заказе с заголовком текста отклика,
+    затем сам текст отклика отдельным сообщением — так удобнее копировать
+    и вставлять в ответ на Kwork."""
     url = f"https://web-atelie.ru/{slug}/"
     budget = f"Бюджет: {int(price)} ₽" + (f" (до {int(price_max)} ₽)" if price_max > price else "") + f" · откликов: {offers}"
-    return (f"Kwork: {name}\n{budget}\nПокупатель: статистика не проверена\n"
+    head = (f"Kwork: {name}\n{budget}\nПокупатель: статистика не проверена\n"
             f"https://kwork.ru/projects/{order_id}/view\n\n"
             f"Адрес будущего демо: {url}\nПока не опубликован. После «делай заказ {order_id}» "
             f"здесь появится заглушка, затем сайт.\n\n"
-            f"✍️ Текст отклика (после готовности демо; сначала напишите «делай заказ {order_id}»):\n"
-            f"Здравствуйте! Мне уже есть что показать: собрал сайт по вашему заданию.\n"
+            f"✍️ Текст отклика (после готовности демо; сначала напишите «делай заказ {order_id}»):")
+    tail = (f"Здравствуйте! Мне уже есть что показать: собрал сайт по вашему заданию.\n"
             f"Это предварительный вариант, внесу любые изменения, по вашему желанию!\n\n"
             f"Можно посмотреть здесь: {url}\n\n"
             f"Другие примеры сайтов, которые сделаны в Веб-Ателье: https://web-atelie.ru/\n\n"
             f"Будущий адрес, пока не опубликован.")
+    return head, tail
 
 
 def notify_order(row):
-    """Шлёт уведомление одного заказа. Возвращает True, если Telegram подтвердил."""
-    return tg_send(order_text(row["order_id"], row["name"], row["price"] or 0,
-                              row["price_max"] or 0, row["offers"] or 0, row["slug"]))
+    """Шлёт уведомление одного заказа двумя сообщениями. Возвращает True, только
+    если доставлены ОБА: при сбое на втором заказ уйдёт в следующий прогон
+    целиком (первое повторится — это лучше, чем потерять текст отклика)."""
+    head, tail = order_messages(row["order_id"], row["name"], row["price"] or 0,
+                                row["price_max"] or 0, row["offers"] or 0, row["slug"])
+    if not tg_send(head):
+        return False
+    return tg_send(tail)
 
 
 def main():
