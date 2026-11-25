@@ -73,11 +73,12 @@ def save_state(ch, last_seen):
 
 
 def load_part():
-    """Текущая группа (1 или 2) из счётчика в vp_state. Нет записи — начинаем с 1."""
+    """Текущая группа (1..4) из счётчика в vp_state. Нет записи / мусор — начинаем с 1."""
     rows = sb_request("GET", "vp_state", params={
         "select": "last_seen", "channel": f"eq.{PART_KEY}", "limit": 1}).json()
     try:
-        return int(rows[0]["last_seen"])
+        v = int(rows[0]["last_seen"])
+        return v if 1 <= v <= 4 else 1
     except (IndexError, TypeError, ValueError):
         return 1
 
@@ -265,10 +266,10 @@ def main():
     t0 = time.time()
     channels = core.CHANNELS
     part = load_part()
-    save_part(2 if part == 1 else 1)  # следующему запуску — другая группа
-    channels = [ch for n, ch in enumerate(channels) if n % 2 == (0 if part == 1 else 1)]
+    save_part(part + 1 if part < 4 else 1)  # следующему запуску — следующая группа (1->2->3->4->1)
+    channels = [ch for n, ch in enumerate(channels) if n % 4 == part - 1]
     print(f"=== {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC запуск: "
-          f"группа {part} из 2, каналов: {len(channels)} ===", flush=True)
+          f"группа {part} из 4, каналов: {len(channels)} ===", flush=True)
 
     state = load_state()
     pending = load_pending()

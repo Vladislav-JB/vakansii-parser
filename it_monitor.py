@@ -67,16 +67,16 @@ def load_channels():
 
 CHANNELS = load_channels()
 
-# Разбиение на две группы для чередующихся запусков каждые 10 минут:
-#   --part 1 — каналы с чётными номерами в списке, --part 2 — с нечётными.
+# Разбиение на 4 группы для чередующихся запусков каждые 10 минут:
+#   --part 1..4 — каналы, чей индекс в списке даёт остаток 0..3 при делении на 4.
 # Без --part (например, run_notify.bat руками) обходится весь список сразу.
 PART = None
 if "--part" in sys.argv:
     _i = sys.argv.index("--part")
     if _i + 1 < len(sys.argv):
         PART = sys.argv[_i + 1]
-if PART in ("1", "2"):
-    CHANNELS = [ch for _n, ch in enumerate(CHANNELS) if _n % 2 == (0 if PART == "1" else 1)]
+if PART in ("1", "2", "3", "4"):
+    CHANNELS = [ch for _n, ch in enumerate(CHANNELS) if _n % 4 == int(PART) - 1]
 FIRST_RUN_POSTS = 100      # сколько постов с текстом брать с канала при первом запуске
 MAX_PAGES = 8              # предохранитель: не больше 8 страниц (по 20 постов) на канал за запуск
 PAUSE = (4, 6)             # пауза между запросами, секунды (было 8-12; уменьшено, чтобы половина из 179 каналов успевала за 10 мин)
@@ -586,7 +586,10 @@ def resolve_part():
         _last = _flag.read_text(encoding="utf-8").strip()
     except OSError:
         _last = ""
-    PART = "1" if _last not in ("1", "2") else ("2" if _last == "1" else "1")
+    if _last not in ("1", "2", "3", "4"):
+        PART = "1"
+    else:
+        PART = str((int(_last) % 4) + 1)
     try:
         _flag.write_text(PART, encoding="utf-8")
     except OSError:
@@ -603,7 +606,7 @@ def main():
     global CHANNELS
     if PART in ("1", "2"):
         CHANNELS = [ch for _n, ch in enumerate(CHANNELS) if _n % 2 == (0 if PART == "1" else 1)]
-    label = f"группа {PART} из 2, каналов: {len(CHANNELS)}" if PART else f"все каналы: {len(CHANNELS)}"
+    label = f"группа {PART} из 4, каналов: {len(CHANNELS)}" if PART else f"все каналы: {len(CHANNELS)}"
     print(f"=== {datetime.now():%Y-%m-%d %H:%M} запуск ({'--notify' if NOTIFY else 'без уведомлений'}; {label}) ===", flush=True)
     state = json.loads(STATE.read_text(encoding="utf-8")) if STATE.exists() else {}
     store = json.loads(POSTS.read_text(encoding="utf-8")) if POSTS.exists() else {}
