@@ -249,3 +249,81 @@ podrabotka_telegram_ru
 # talentpoolru («Talent Pool», 2 673) — HR-канал про зарплаты, не вакансии;
 # не найдены username: «Вакансии&Резюме» (13 846), «SMM Фриланс Ai нейро вакансии работа от 80к»
 # (9 011), «РАБОТА БЕЗ ОФИСА» (1 162). Если увидишь их usernames — скинь, добавлю.
+
+# Добавлены 2026-11-25: источники OBSION (кабинет clients.obsion.ru, вкладка
+# «Источники» -> «все источники (300)»). Из 99 username-кандидатов проверены на
+# t.me/s/: 78 живых с открытым веб-просмотром, 21 мёртвый пропущен; из живых
+# отсеяны не по теме (финансы top_fins/finexecutive, крипта workingincrypto,
+# кино cinemaworksfree, бартер tobarbarter, пром/стройка psoyuz, рилс reelsmakervacancy).
+# Статистика S/A/B/мусор за 7 дней — в отчёте obsion_sources.md.
+python_remote_job
+mobiledevjobs
+itjobsfeed
+toplevel_job
+jtbl_vacancy
+workfortop
+frilanser_vacansii
+it_work_backend
+vakansi_rus
+esres_1c
+theypaygood
+devops_jobs_feed
+denispulenkovbirga
+it_work_frontend
+udafrii
+designerworkchat
+gamedev_and_tech_vacancy
+devs_it
+rabota_v_gamedeve
+itworkhubchannel
+comeinlena
+job_web3
+job_javadevs
+job_react
+youritjob
+freelance7
+senior_frontender
+workayte
+jscript_jobs
+irenaivanova_official
+designs_squad
+workk_on
+huggabletalents
+godevjob
+csharpdevjob
+motionhunter
+sistemny_analitik_vakansii
+data_engineer_vakansii
+datajob
+product_manager_vakansii
+devzonegd
+amurpoint
+zdemcv
+proglib_jobs
+rabotafrontend
+golang_go_jobs_vakansii
+vacancy_1c
+pythonrabota
+ydalenniydohod
+product_analyst_vakansii
+dddwork
+workk_onhr
+remote_job_ru
+analitik_dannyh_vakansii
+sparklesjobs
+comeindesign
+devkz_jobs
+uzdev_jobs
+jobs_juniors_remote
+remote_jobsz
+careerspace
+productjobgo
+workitkz
+remocatedevs
+normrabota
+job_webdev
+biznes_analitik_vakansii
+job_webdesign
+devjobs
+dotnetrujobsfeed
+vakansii_design
