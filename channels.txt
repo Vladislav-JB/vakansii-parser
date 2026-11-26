@@ -327,3 +327,49 @@ job_webdesign
 devjobs
 dotnetrujobsfeed
 vakansii_design
+
+# Добавлены 2026-11-26 из папок Telegram Web K (проверено на t.me/s/: живые, превью открывается).
+# Папка «Чаты Инфобиз» (31) — чаты фриланса/вакансий инфобиза:
+freelance_chatik0
+workchatbuzines
+profiwork
+worknomer1
+Freelance_grooup
+rabotavakansij
+freelansvipchat
+ewoxchat
+verifka7
+mari_vakansii
+frilans2001002
+mari_vakansiii
+solomonidin_chat
+frilancer_na_divane
+frilanc_topchat
+freelance_vacancii
+ggfreelancechat
+monay_telegram
+zarabotaemchat
+frilanserov_chat
+pomogator1
+proffreelancee_baraholca
+proffreelancee_chat
+mari_otzyv
+vakansii_infobiz
+accent_school
+biznesassistentiii
+avitobust
+IT_jobs_group
+reclamaexpertov
+search_techspec
+# Папка «HR 17.07» (10) — вакансии/удалёнка/фриланс (мимо тематики убраны:
+# банки, финансы, HR-tech, авторские блоги; thepaywell — без веб-превью):
+frilans_na_legke
+rueventjob4at
+IRemoter
+WorksBCEM
+WrkWriter
+WrkSMMs
+WrkDesigners
+board_axolotl
+Koteyka_Freelancer
+goodj0bspb
