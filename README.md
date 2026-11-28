@@ -10,8 +10,8 @@
 ## Как работает
 
 - **Расписание:** запуск обоих workflow происходит через Supabase (pg_cron + pg_net):
-  функция `dispatch_watchers()` каждые 5 минут проверяет окно 09:00–20:59 по Москве
-  (06:00–17:59 UTC) и вызывает GitHub API `workflow_dispatch` для `kwork.yml`
+  функция `dispatch_watchers()` каждые 5 минут проверяет окно 06:00–20:59 по Москве
+  (03:00–17:59 UTC) и вызывает GitHub API `workflow_dispatch` для `kwork.yml`
   (каждые 5 минут) и `vacancies.yml` (в чётные десятки минут). В самих workflow
   блок `schedule:` убран — GitHub-расписание для свежего репозитория не стартовало.
   Токен GitHub хранится в таблице `gh_token` (RLS без политик, читается только
