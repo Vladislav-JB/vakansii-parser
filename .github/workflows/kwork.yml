@@ -2,6 +2,10 @@ name: kwork
 
 on:
   workflow_dispatch: {}
+  schedule:
+    # 03:00–05:59 UTC = 06:00–08:59 МСК: Supabase dispatch_watchers()
+    # стартует в 09:00 МСК, этим окном закрываются утренние часы (решение 28.11.2026)
+    - cron: "*/5 3-5 * * *"
 
 concurrency:
   group: kwork

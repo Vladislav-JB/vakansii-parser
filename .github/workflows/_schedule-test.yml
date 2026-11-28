@@ -1,0 +1,12 @@
+name: schedule-test
+
+on:
+  schedule:
+    - cron: "*/2 * * * *"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "schedule works"
